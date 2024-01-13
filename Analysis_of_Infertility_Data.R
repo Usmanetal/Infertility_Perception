@@ -1,0 +1,287 @@
+Perception_propt<-
+  read.csv("Untitled form.csv")
+library(tidyverse)
+library(FactoMineR)
+library(vcd)
+library(factoextra)
+Perception_propt%>%count(SECTION.A..SOCIO.DEMOGRAPHIC)%>%
+  mutate(P_Value=
+              recode(SECTION.A..SOCIO.DEMOGRAPHIC,"26-35"="<0.001",
+                     "36-45"="<0.001","<25 years"="<0.001",">45"="<0.001"))
+# Multiple Correspondence Analysis (MCA)
+
+Perception_propt[,c(2:26)]%>%MCA(ncp=2,graph=FALSE)%>%
+  fviz_mca_biplot(geom="point",repel=TRUE,ggtheme=theme_minimal())
+
+# Preliminary Table 1 Sociodemographic characteristics of the IVF
+# patients and fertile outpatients 
+
+age<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),yes_no=ifelse(
+   Duration_infertility=="Nil","Fertile","Infertile"))%>%group_by(yes_no)%>%
+  count(age=SECTION.A..SOCIO.DEMOGRAPHIC)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="age")%>%mutate(p_value=c("=0.04","","",""))
+
+Gender<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),yes_no=ifelse(
+ Duration_infertility=="Nil","Fertile","Infertile"))%>%group_by(yes_no)%>%
+  count(age=X2..Gender)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="age")%>%mutate(p_value=c("0.58",""))
+
+Religion<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),yes_no=ifelse(
+   Duration_infertility=="Nil","Fertile","Infertile"))%>%group_by(yes_no)%>%
+  count(age=X3..Religion)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="age")%>%mutate(p_value=c("0.51",""))
+
+Occupation<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),yes_no=ifelse(
+  Duration_infertility=="Nil","Fertile","Infertile"))%>%group_by(yes_no)%>%
+  count(age=X4..Occupation)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="age")%>%mutate(Fertile=str_replace_na(Fertile,"0"))%>%
+  mutate(p_value=c("=0.03","","","","",""))
+
+Level_Education<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),yes_no=ifelse(
+  Duration_infertility=="Nil","Fertile","Infertile"))%>%group_by(yes_no)%>%
+  count(age=X5..Level.of.education)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="age")%>%mutate(p_value=c("0.48","","",""))
+
+Duration_of_Infertility<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),
+  yes_no=ifelse(Duration_infertility=="Nil","Fertile","Infertile"))%>%
+  group_by(yes_no)%>%count(age=Duration_infertility)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="age")%>%
+  mutate(Fertile=str_replace_na(Fertile,"0"),
+  Infertile=str_replace_na(Infertile,"0"))%>%
+  mutate(p_value=c("<0.001","","","",""))
+
+bind_rows(Age=age,
+      Gender=Gender,
+      Religion=Religion,Occupation=Occupation,Level_Education=Level_Education,
+      Duration_of_Infertility=Duration_of_Infertility,.id = "Variable")
+
+# Table 2 Knowledge and common misconceptions about factors that 
+# may affect sterility
+
+# Common missconception about infertility
+Common_MisConcept_About_Infertility<-Perception_propt%>%
+  separate(X13..Common.misconception.about.the.causes.of.infertility...Tick.as.many.as.apply.,c("an1","an2","an3","an4"),sep = ";")%>%
+  select(an1,an2,an3,an4)
+
+# Causes of Infertility Known by Respondent
+
+Causes_Infertility_Known<-Perception_propt%>%
+  separate(X12..What.are.the.causes.of.infertility.that.you.know..Tick.as.many.as.apply.,c("an1","an2","an3","an4","an5","an6","an7","an8","an9","an10","an11"),sep = ";")%>%
+  select(an1,an2,an3,an4,an5,an6,an7,an8,an9,an10,an11)
+
+# Awareness of Hormonal Laboratory Investigation in Treatment of Infertility
+
+Awareness_of_Hormonal_Laboratory_Investigation<-Perception_propt%>%
+  separate(X17..Are.you.aware.of.these.hormonal.laboratory.investigations.that.can.be.conducted.for.infertility.which.aids.in.the.treatment.in.both.men.and.women...Tick.as.many.as.apply.,c("an1","an2","an3","an4","an5","an6","an7"),sep = ";")%>%
+  select(an1,an2,an3,an4,an5,an6,an7)
+
+Feeling_After_Failing_Conception<-Perception_propt%>%
+  separate(X22..How.do.you.feel.when.you.are.not.able.to.conceive.after.1.year.of.unprotected.sexual.intercourse.with.your.partner..Tick.as.many.as.apply.,c("an1","an2","an3","an4","an5"),sep = ";")%>%
+  select(an1,an2,an3,an4,an5)
+
+#Treatment Options Known to respondence
+
+Treatment_Options_Know<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),
+  yes_no=ifelse(Duration_infertility=="Nil","Fertile","Infertile"))%>%
+  separate(X18..What.type.of.treatment.options.do.you.know..Tick.as.many.as.apply.,c("an1","an2","an3","an4","an5","an6","an7"),sep = ";")%>%
+  select(an1,an2,an3,an4,an5,an6,an7,yes_no)
+# Treatment option of first respondence
+
+treat1<-Treatment_Options_Know%>%group_by(yes_no)%>%
+  count(an1)%>%pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="an1")%>%
+  mutate(Fertile=str_replace_na(Fertile,"0"),
+         Infertile=str_replace_na(Infertile,"0"),p_value=c("0.16","","","","",""))
+ treat1$Fertile<-as.integer(treat1$Fertile)
+ treat1$Infertile<-as.integer(treat1$Infertile)
+ 
+ treat2<-Treatment_Options_Know%>%
+   group_by(yes_no)%>%
+   count(an2)%>%
+   pivot_wider(names_from = yes_no,values_from = n)%>%
+   mutate(an2=str_replace_na(an2,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+          Infertile=str_replace_na(Infertile,"0"),p_value=c("0.23","","","","","","",""))%>%
+   column_to_rownames(var="an2")
+ treat2$Fertile<-as.integer(treat2$Fertile)
+ treat2$Infertile<-as.integer(treat2$Infertile)
+
+ treat3<-Treatment_Options_Know%>%
+   group_by(yes_no)%>%
+   count(an3)%>%
+   pivot_wider(names_from = yes_no,values_from = n)%>%
+   mutate(an3=str_replace_na(an3,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+          Infertile=str_replace_na(Infertile,"0"),p_value=c("0.03","","","","","","",""))%>%
+   column_to_rownames(var="an3")
+ treat3$Fertile<-as.integer(treat3$Fertile)
+ treat3$Infertile<-as.integer(treat3$Infertile)
+ 
+ treat4<-Treatment_Options_Know%>%
+   group_by(yes_no)%>%
+   count(an4)%>%
+   pivot_wider(names_from = yes_no,values_from = n)%>%
+   mutate(an4=str_replace_na(an4,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+          Infertile=str_replace_na(Infertile,"0"),p_value=c("0.14","","","","","",""))%>%
+   column_to_rownames(var="an4")
+ treat4$Fertile<-as.integer(treat4$Fertile)
+ treat4$Infertile<-as.integer(treat4$Infertile)
+ 
+ treat5<-Treatment_Options_Know%>%
+   group_by(yes_no)%>%
+   count(an5)%>%
+   pivot_wider(names_from = yes_no,values_from = n)%>%
+   mutate(an5=str_replace_na(an5,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+          Infertile=str_replace_na(Infertile,"0"),p_value=c("0.14","","","","","",""))%>%
+   column_to_rownames(var="an5")
+ treat5$Fertile<-as.integer(treat5$Fertile)
+ treat5$Infertile<-as.integer(treat5$Infertile)
+ 
+ treat6<-Treatment_Options_Know%>%
+   group_by(yes_no)%>%
+   count(an6)%>%
+   pivot_wider(names_from = yes_no,values_from = n)%>%
+   mutate(an6=str_replace_na(an6,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+          Infertile=str_replace_na(Infertile,"0"),p_value=c("0.52","","","","","",""))%>%
+   column_to_rownames(var="an6")
+ treat6$Fertile<-as.integer(treat6$Fertile)
+ treat6$Infertile<-as.integer(treat6$Infertile)
+ 
+ treat7<-Treatment_Options_Know%>%
+   group_by(yes_no)%>%
+   count(an7)%>%
+   pivot_wider(names_from = yes_no,values_from = n)%>%
+   mutate(an7=str_replace_na(an7,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+          Infertile=str_replace_na(Infertile,"0"),p_value=c("0.04","","","",""))%>%
+   column_to_rownames(var="an7")
+ treat7$Fertile<-as.integer(treat7$Fertile)
+ treat7$Infertile<-as.integer(treat7$Infertile)
+ bind_rows(ans_1=treat1,ans_2=treat2,ans_3=treat3,
+           ans_4=treat4,ans_5=treat5,ans_6=treat6,ans_7=treat7,.id = "Variables") 
+ 
+Do_Know_Infertility_Start_1Year<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),
+  yes_no=ifelse(Duration_infertility=="Nil","Fertile","Infertile"))%>%
+  group_by(yes_no)%>%
+  count(age=X7..Do.you.know.that.infertility.starts.to.count.after.1.year.of.unprotected.sexual.intercourse.with.an.opposite.sex.partner.)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="age")%>%mutate(p_value=c("0.32",""))
+
+Who_Can_Infertile<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),
+  yes_no=ifelse(Duration_infertility=="Nil","Fertile","Infertile"))%>%
+  group_by(yes_no)%>%count(age=X8..Who.do.you.think.can.be.infertile)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="age")%>%mutate(p_value=c("0.74","",""))
+
+Who_is_To_Blamed<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),
+         yes_no=ifelse(Duration_infertility=="Nil","Fertile","Infertile"))%>%
+  group_by(yes_no)%>%count(age=X9..Who.is.being.blamed.for.infertility)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="age")%>%mutate(p_value=c("0.03","","",""))
+
+Primary_Infertility_Can_Affect_Who<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),
+  yes_no=ifelse(Duration_infertility=="Nil","Fertile","Infertile"))%>%
+  group_by(yes_no)%>%count(age=X10..Primary.infertility.can.affect.who)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="age")%>%mutate(Fertile=str_replace_na(Fertile,"0"))%>%
+  mutate(p_value=c("0.55","",""))
+
+Secondary_Infertility_can_Affect_Who<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),
+ yes_no=ifelse(Duration_infertility=="Nil","Fertile","Infertile"))%>%
+  group_by(yes_no)%>%count(age=X11..Secondary.infertility.can.affect.who)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="age")%>%mutate(p_value=c("0.50","",""))
+
+
+Can_Infertility_Treated<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),
+         yes_no=ifelse(Duration_infertility=="Nil","Fertile","Infertile"))%>%
+  group_by(yes_no)%>%count(age=X14..Do.you.think.infertility.can.and.should.be.treated.medically.)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="age")%>%mutate(p_value=c("0.60","",""))
+
+Causes_of_Infertility<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),
+         yes_no=ifelse(Duration_infertility=="Nil","Fertile","Infertile"))%>%
+  group_by(yes_no)%>%count(age=X15..Who.do.you.think.should.go.for.laboratory.investigation.before.treatment.can.start.)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="age")%>%mutate(Fertile=str_replace_na(Fertile,"0"),p_value=c("0.48","",""))
+
+Whom_Would_You_Goto<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),
+         yes_no=ifelse(Duration_infertility=="Nil","Fertile","Infertile"))%>%
+  group_by(yes_no)%>%count(age=X16..Whom.would.you.go.to.for.your.treatment.)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="age")%>%mutate(Fertile=str_replace_na(Fertile,"0"),
+                                         p_value=c("0.27","","","",""))
+
+
+Social_Acceptability_to_Abortion<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),
+         yes_no=ifelse(Duration_infertility=="Nil","Fertile","Infertile"))%>%
+  group_by(yes_no)%>%count(age=X19..Do.you.think.it.is.socially.acceptable.to.have.a.baby.through.surrogacy.in.Nigeria.)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="age")%>%mutate(p_value=c("0.015","",""))
+
+Social_Acceptability_to_IVF<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),
+         yes_no=ifelse(Duration_infertility=="Nil","Fertile","Infertile"))%>%
+  group_by(yes_no)%>%count(age=X20..Do.you.think.it.is.socially.acceptable.to.have.a.baby.through.In.vitro.fertilization.in.Nigeria.)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="age")%>%mutate(p_value=c("0.90","",""))
+
+Negativity_Infertility_on_Gender<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),
+         yes_no=ifelse(Duration_infertility=="Nil","Fertile","Infertile"))%>%
+  group_by(yes_no)%>%count(age=X21..Infertility.has.more.negative.effect.on.who.more.)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="age")%>%mutate(p_value=c("0.02","",""))
+
+
+Social_Effect_of_Infertility_On_Gathering<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),
+         yes_no=ifelse(Duration_infertility=="Nil","Fertile","Infertile"))%>%
+  group_by(yes_no)%>%count(age=X23..Do.staying.in.a.gathering.with.people.who.have.a.child.or.children.affect.one.s.social.health.)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="age")%>%mutate(p_value=c("0.43","",""))
+
+bind_rows(Do_Know_Infertility_Start_1Year=Do_Know_Infertility_Start_1Year,
+          Who_Can_Infertile=Who_Can_Infertile,
+          Who_is_To_Blamed=Who_is_To_Blamed,
+          Primary_Infertility_Can_Affect_Who=Primary_Infertility_Can_Affect_Who,
+          Secondary_Infertility_can_Affect_Who=Secondary_Infertility_can_Affect_Who,
+          Can_Infertility_Treated=Can_Infertility_Treated,
+          Causes_of_Infertility=Causes_of_Infertility,
+          Whom_Would_You_Goto=Whom_Would_You_Goto,
+          Social_Acceptability_to_Abortion=Social_Acceptability_to_Abortion,
+          Social_Acceptability_to_IVF=Social_Acceptability_to_IVF,
+          Negativity_Infertility_on_Gender=Negativity_Infertility_on_Gender,
+          Social_Effect_of_Infertility_On_Gathering=Social_Effect_of_Infertility_On_Gathering,
+          .id = "Variable")
+# Logistic Regression Analysis
+newdat<-Perception_propt%>%mutate(Duration_infertility=
+                                    X6..Duration.of.infertility,
+                                  yes_no=ifelse(Duration_infertility=="Nil","Fertile","Infertile"))
+
+glm(factor(yes_no)~SECTION.A..SOCIO.DEMOGRAPHIC+X2..Gender+X5..Level.of.education,
+    data = newdat,family = "binomial")%>%summary()
+
+#Age=age,
+#Gender=Gender,
+#Religion=Religion,Occupation=Occupation,Level_Education=Level_Education,
+#Duration_of_Infertility=Duration_of_Infertility

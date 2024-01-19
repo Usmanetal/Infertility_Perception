@@ -1,13 +1,20 @@
 ---
 output:
-  pdf_document: default
+  pdf_document:
+    toc: yes
+    number_sections: yes
   html_document: default
+  always_allow_html: yes
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(webshot)
+library(dplyr)
+library(readxl)
+Perception_propt<-read_excel("Nneka_form1.xls")%>%data.frame()
 
-Perception_propt<-
-  read.csv("Untitled form.csv")
+#Perception_propt<-
+ # read.csv("Nneka_form.csv")
 library(tidyverse)
 library(FactoMineR)
 library(vcd)
@@ -341,6 +348,386 @@ treat1<-Treatment_Options_Know%>%group_by(yes_no)%>%
  treat7$Infertile<-as.integer(treat7$Infertile)
  bind_rows(ans_1=treat1,ans_2=treat2,ans_3=treat3,
            ans_4=treat4,ans_5=treat5,ans_6=treat6,ans_7=treat7,.id = "Variables") 
+
+```
+
+
+```{r}
+# Table 2 Knowledge and common misconceptions about factors that may affect sterility
+
+# Common misconception about infertility
+Common_MisConcept_About_Infertility<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"), yes_no=ifelse(Duration_infertility=="Nil","Fertile","Infertile"))%>%
+  separate(X13..Common.misconception.about.the.causes.of.infertility...Tick.as.many.as.apply.,c("an1","an2","an3","an4"),sep = ";")%>%
+  select(an1,an2,an3,an4,yes_no)
+
+trt1<-Common_MisConcept_About_Infertility%>%group_by(yes_no)%>%
+  count(an1)%>%pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="an1")%>%
+  mutate(Fertile=str_replace_na(Fertile,"0"),Infertile=str_replace_na(Infertile,"0"),p_value=c("0.10","","","","",""))
+trt1$Fertile<-as.integer(trt1$Fertile)
+trt1$Infertile<-as.integer(trt1$Infertile)
+
+trt2<-Common_MisConcept_About_Infertility%>%
+  group_by(yes_no)%>%
+  count(an2)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an2=str_replace_na(an2,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),Infertile=str_replace_na(Infertile,"0"),p_value=c("0.06","","","","",""))%>%column_to_rownames(var="an2")
+trt2$Fertile<-as.integer(trt2$Fertile)
+trt2$Infertile<-as.integer(trt2$Infertile)
+
+trt3<-Common_MisConcept_About_Infertility%>%
+  group_by(yes_no)%>%
+  count(an3)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an3=str_replace_na(an3,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),Infertile=str_replace_na(Infertile,"0"),p_value=c("0.45","","","","",""))%>%column_to_rownames(var="an3")
+trt3$Fertile<-as.integer(trt3$Fertile)
+trt3$Infertile<-as.integer(trt3$Infertile)
+
+trt4<-Common_MisConcept_About_Infertility%>%
+  group_by(yes_no)%>%
+  count(an4)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an4=str_replace_na(an4,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),Infertile=str_replace_na(Infertile,"0"),p_value=c("0.31","","",""))%>%column_to_rownames(var="an4")
+trt4$Fertile<-as.integer(trt4$Fertile)
+trt4$Infertile<-as.integer(trt4$Infertile)
+
+Misconception_Infertility<-bind_rows(ans_1=trt1,ans_2=trt2,ans_3=trt3,
+ans_4=trt4,.id = "Variables")
+
+Misconception_Infertility
+circles1<-Misconception_Infertility%>%rownames_to_column("Treatment_Option")%>%select(-Variables,-p_value )%>%mutate(Treatment_Option=str_replace_all(Treatment_Option,"[...]\\d*",""),Treatment_Option=recode(Treatment_Option,"Obesity in both men and wome"="Obesity in both men and women"))%>%group_by(Treatment_Option)%>%
+  summarise(Fertile=sum(Fertile),Infertile=sum(Infertile))
+
+library(plotly)
+library(ggpubr)
+fig <- plot_ly(circles1, labels = ~Treatment_Option, values = ~Infertile, type = 'pie')
+fig1 <- fig %>% layout(title = 'Treatment Options Known to Infertile Respondent', xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+fig1
+
+figa <- plot_ly(circles1, labels = ~Treatment_Option, values = ~Fertile, type = 'pie')
+fig <- figa %>% layout(title = 'Treatment Options Known to Fertile Respondent',xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+fig
+```
+
+
+```{r}
+
+### **Causes of Infertility Known by Respondent**
+
+Causes_Infertility_Known<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),
+ yes_no=ifelse(Duration_infertility=="Nil","Fertile","Infertile"))%>%
+  separate(X12..What.are.the.causes.of.infertility.that.you.know..Tick.as.many.as.apply.,c("an1","an2","an3","an4","an5","an6","an7","an8","an9","an10","an11"),sep = ";")%>%
+  select(an1,an2,an3,an4,an5,an6,an7,an8,an9,an10,an11,yes_no)
+
+treta1<-Causes_Infertility_Known%>%group_by(yes_no)%>%
+  count(an1)%>%pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="an1")%>%
+  mutate(Fertile=str_replace_na(Fertile,"0"),
+  Infertile=str_replace_na(Infertile,"0"),p_value=c("<0.001","","","","","","","","","",""))
+treta1$Fertile<-as.integer(treta1$Fertile)
+treta1$Infertile<-as.integer(treta1$Infertile)
+
+treta2<-Causes_Infertility_Known%>%
+  group_by(yes_no)%>%
+  count(an2)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an2=str_replace_na(an2,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+         Infertile=str_replace_na(Infertile,"0"),
+         p_value=c("0.62","","","","","","","","",""))%>%column_to_rownames(var="an2")
+treta2$Fertile<-as.integer(treta2$Fertile)
+treta2$Infertile<-as.integer(treta2$Infertile)
+
+treta3<-Causes_Infertility_Known%>%
+  group_by(yes_no)%>%
+  count(an3)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an3=str_replace_na(an3,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+         Infertile=str_replace_na(Infertile,"0"),p_value=c("<0.21","","","","","","","","","",""))%>%
+  column_to_rownames(var="an3")
+treta3$Fertile<-as.integer(treta3$Fertile)
+treta3$Infertile<-as.integer(treta3$Infertile)
+
+# Error in fisher.test(.) : 
+#  FEXACT error 7(location). LDSTP=18600 is too small for this problem,
+# (pastp=39.6896, ipn_0:=ipoin[itp=336]=4340, stp[ipn_0]=39.0949).
+# Increase workspace or consider using 'simulate.p.value=TRUE'
+
+treta4<-Causes_Infertility_Known%>%
+  group_by(yes_no)%>%
+  count(an4)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an4=str_replace_na(an4,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+         Infertile=str_replace_na(Infertile,"0"),p_value=c("0.09","","","","","","","","",""))%>%
+  column_to_rownames(var="an4")
+treta4$Fertile<-as.integer(treta4$Fertile)
+treta4$Infertile<-as.integer(treta4$Infertile)
+
+treta5<-Causes_Infertility_Known%>%
+  group_by(yes_no)%>%
+  count(an5)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an5=str_replace_na(an5,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+         Infertile=str_replace_na(Infertile,"0"),p_value=c("0.09","","","","","","","",""))%>%
+  column_to_rownames(var="an5")
+treta5$Fertile<-as.integer(treta5$Fertile)
+treta5$Infertile<-as.integer(treta5$Infertile)
+
+treta6<-Causes_Infertility_Known%>%
+  group_by(yes_no)%>%
+  count(an6)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an6=str_replace_na(an6,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+         Infertile=str_replace_na(Infertile,"0"),p_value=c("0.26","","","","","","","",""))%>%
+  column_to_rownames(var="an6")
+treta6$Fertile<-as.integer(treta6$Fertile)
+treta6$Infertile<-as.integer(treta6$Infertile)
+
+treta7<-Causes_Infertility_Known%>%
+  group_by(yes_no)%>%
+  count(an7)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an7=str_replace_na(an7,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+         Infertile=str_replace_na(Infertile,"0"),p_value=c("0.39","","","","","",""))%>%
+  column_to_rownames(var="an7")
+treta7$Fertile<-as.integer(treta7$Fertile)
+treta7$Infertile<-as.integer(treta7$Infertile)
+
+treta8<-Causes_Infertility_Known%>%
+  group_by(yes_no)%>%
+  count(an8)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an8=str_replace_na(an8,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+         Infertile=str_replace_na(Infertile,"0"),p_value=c("0.15","","","","","",""))%>%
+  column_to_rownames(var="an8")
+treta8$Fertile<-as.integer(treta8$Fertile)
+treta8$Infertile<-as.integer(treta8$Infertile)
+
+treta9<-Causes_Infertility_Known%>%
+  group_by(yes_no)%>%
+  count(an9)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an9=str_replace_na(an9,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+         Infertile=str_replace_na(Infertile,"0"),p_value=c("0.19","","","",""))%>%
+  column_to_rownames(var="an9")
+treta9$Fertile<-as.integer(treta9$Fertile)
+treta9$Infertile<-as.integer(treta9$Infertile)
+
+treta10<-Causes_Infertility_Known%>%
+  group_by(yes_no)%>%
+  count(an10)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an10=str_replace_na(an10,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+         Infertile=str_replace_na(Infertile,"0"),p_value=c("0.02","",""))%>%
+  column_to_rownames(var="an10")
+treta10$Fertile<-as.integer(treta10$Fertile)
+treta10$Infertile<-as.integer(treta10$Infertile)
+
+treta11<-Causes_Infertility_Known%>%
+  group_by(yes_no)%>%
+  count(an11)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an11=str_replace_na(an11,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+         Infertile=str_replace_na(Infertile,"0"),p_value=c("0.53",""))%>%
+  column_to_rownames(var="an11")
+treta11$Fertile<-as.integer(treta11$Fertile)
+treta11$Infertile<-as.integer(treta11$Infertile)
+
+
+
+Known_cause<-bind_rows(ans_1=treta1,ans_2=treta2,ans_3=treta3,
+                            ans_4=treta4,ans_5=treta5,ans_6=treta6,ans_7=treta7,
+                            ans_8=treta8,ans_9=treta9,ans_10=treta10,
+                            ans_11=treta11,.id = "Variables") 
+
+Known_cause
+
+circles<-Known_cause%>%rownames_to_column("Treatment_Option")%>%
+  select(-Variables,-p_value )%>%mutate(Treatment_Option=str_replace_all(Treatment_Option,"[...]\\d*",""),Treatment_Option=recode(Treatment_Option,"Obesity in both men and wome"="Obesity in both men and women"))%>%group_by(Treatment_Option)%>%
+  summarise(Fertile=sum(Fertile),Infertile=sum(Infertile))
+
+library(plotly)
+library(ggpubr)
+fig2a <- plot_ly(circles, labels = ~Treatment_Option, values = ~Infertile, type = 'pie')
+fig2 <- fig2a %>% layout(title = 'Treatment Options Known to Infertile Respondent',
+     xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+     yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+fig2
+
+fig3a <- plot_ly(circles, labels = ~Treatment_Option, values = ~Fertile, type = 'pie')
+fig3 <- fig3a %>% layout(title = 'Treatment Options Known to Fertile Respondent',
+   xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+   yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+fig3
+
+
+ggplot(circles,aes(x="",y=Infertile,fill=Treatment_Option))+
+  geom_bar(width = 1,stat = "identity")+coord_polar("y",start = 0)+
+  theme_void()+scale_fill_grey()+
+  theme(axis.title.x = element_blank())
+```
+
+
+
+```{r}
+# Awareness of Hormonal Laboratory Investigation in Treatment of Infertility
+
+Awareness_of_Hormonal_Laboratory_Investigation<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),
+  yes_no=ifelse(Duration_infertility=="Nil","Fertile","Infertile"))%>%
+  separate(X17..Are.you.aware.of.these.hormonal.laboratory.investigations.that.can.be.conducted.for.infertility.which.aids.in.the.treatment.in.both.men.and.women...Tick.as.many.as.apply.,c("an1","an2","an3","an4","an5","an6","an7"),sep = ";")%>%
+  select(an1,an2,an3,an4,an5,an6,an7,yes_no)
+
+tret1<-Awareness_of_Hormonal_Laboratory_Investigation%>%group_by(yes_no)%>%
+  count(an1)%>%pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="an1")%>%
+  mutate(Fertile=str_replace_na(Fertile,"0"),Infertile=str_replace_na(Infertile,"0"),p_value=c("0.16","","","","",""))
+tret1$Fertile<-as.integer(tret1$Fertile)
+tret1$Infertile<-as.integer(tret1$Infertile)
+
+tret2<-Awareness_of_Hormonal_Laboratory_Investigation%>%
+  group_by(yes_no)%>%
+  count(an2)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an2=str_replace_na(an2,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+  Infertile=str_replace_na(Infertile,"0"),p_value=c("0.01","","","","",""))%>%column_to_rownames(var="an2")
+tret2$Fertile<-as.integer(tret2$Fertile)
+tret2$Infertile<-as.integer(tret2$Infertile)
+
+tret3<-Awareness_of_Hormonal_Laboratory_Investigation%>%
+  group_by(yes_no)%>%
+  count(an3)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an3=str_replace_na(an3,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+  Infertile=str_replace_na(Infertile,"0"),p_value=c("<0.001","","","","",""))%>%column_to_rownames(var="an3")
+tret3$Fertile<-as.integer(tret3$Fertile)
+tret3$Infertile<-as.integer(tret3$Infertile)
+
+tret4<-Awareness_of_Hormonal_Laboratory_Investigation%>%
+  group_by(yes_no)%>%
+  count(an4)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an4=str_replace_na(an4,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),Infertile=str_replace_na(Infertile,"0"),p_value=c("0.18","","","",""))%>%
+  column_to_rownames(var="an4")
+tret4$Fertile<-as.integer(tret4$Fertile)
+tret4$Infertile<-as.integer(tret4$Infertile)
+
+tret5<-Awareness_of_Hormonal_Laboratory_Investigation%>%
+  group_by(yes_no)%>%
+  count(an5)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an5=str_replace_na(an5,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+         Infertile=str_replace_na(Infertile,"0"),p_value=c("0.02","","",""))%>%column_to_rownames(var="an5")
+tret5$Fertile<-as.integer(tret5$Fertile)
+tret5$Infertile<-as.integer(tret5$Infertile)
+
+tret6<-Awareness_of_Hormonal_Laboratory_Investigation%>%
+  group_by(yes_no)%>%
+  count(an6)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an6=str_replace_na(an6,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+         Infertile=str_replace_na(Infertile,"0"),p_value=c("0.18","",""))%>%
+  column_to_rownames(var="an6")
+tret6$Fertile<-as.integer(tret6$Fertile)
+tret6$Infertile<-as.integer(tret6$Infertile)
+
+tret7<-Awareness_of_Hormonal_Laboratory_Investigation%>%
+  group_by(yes_no)%>%
+  count(an7)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an7=str_replace_na(an7,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+  Infertile=str_replace_na(Infertile,"0"),p_value=c("0.94",""))%>%
+  column_to_rownames(var="an7")
+tret7$Fertile<-as.integer(tret7$Fertile)
+tret7$Infertile<-as.integer(tret7$Infertile)
+Treatment_Option<-bind_rows(ans_1=tret1,ans_2=tret2,ans_3=tret3,
+                            ans_4=tret4,ans_5=tret5,ans_6=tret6,ans_7=tret7,.id = "Variables") 
+
+circles2<-Treatment_Option%>%rownames_to_column("Treatment_Option")%>%
+  select(-Variables,-p_value )%>%mutate(Treatment_Option=str_replace_all(Treatment_Option,"[...]\\d*",""),Treatment_Option=recode(Treatment_Option,"Obesity in both men and wome"="Obesity in both men and women"))%>%group_by(Treatment_Option)%>%
+  summarise(Fertile=sum(Fertile),Infertile=sum(Infertile))
+
+fig4a <- plot_ly(circles2, labels = ~Treatment_Option, values = ~Infertile, type = 'pie')
+fig4 <- fig4a %>% layout(title = 'Treatment Options Known to Infertile Respondent',xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+fig4
+
+fig5a <- plot_ly(circles2, labels = ~Treatment_Option, values = ~Fertile, type = 'pie')
+fig5 <- fig5a %>% layout(title = 'Treatment Options Known to Fertile Respondent',xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+fig5
+
+```
+
+
+
+```{r}
+# Feeling After Failing Conception
+
+Feeling_After_Failing_Conception<-Perception_propt%>%
+  mutate(Duration_infertility=recode(X6..Duration.of.infertility,"Nil:"="Nil"),
+  yes_no=ifelse(Duration_infertility=="Nil","Fertile","Infertile"))%>%
+  separate(X22..How.do.you.feel.when.you.are.not.able.to.conceive.after.1.year.of.unprotected.sexual.intercourse.with.your.partner..Tick.as.many.as.apply.,c("an1","an2","an3","an4","an5"),sep = ";")%>%
+  select(an1,an2,an3,an4,an5,yes_no)
+
+trat1<-Feeling_After_Failing_Conception%>%group_by(yes_no)%>%
+  count(an1)%>%pivot_wider(names_from = yes_no,values_from = n)%>%
+  column_to_rownames(var="an1")%>%
+  mutate(Fertile=str_replace_na(Fertile,"0"),
+         Infertile=str_replace_na(Infertile,"0"),p_value=c("<0.001","","",""))
+trat1$Fertile<-as.integer(trat1$Fertile)
+trat1$Infertile<-as.integer(trat1$Infertile)
+
+trat2<-Feeling_After_Failing_Conception%>%
+  group_by(yes_no)%>%
+  count(an2)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an2=str_replace_na(an2,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+         Infertile=str_replace_na(Infertile,"0"),p_value=c("0.002","","",""))%>%column_to_rownames(var="an2")
+trat2$Fertile<-as.integer(trat2$Fertile)
+trat2$Infertile<-as.integer(trat2$Infertile)
+
+trat3<-Feeling_After_Failing_Conception%>%
+  group_by(yes_no)%>%
+  count(an3)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an3=str_replace_na(an3,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+         Infertile=str_replace_na(Infertile,"0"),p_value=c("0.45","","",""))%>%
+  column_to_rownames(var="an3")
+trat3$Fertile<-as.integer(trat3$Fertile)
+trat3$Infertile<-as.integer(trat3$Infertile)
+
+trat4<-Feeling_After_Failing_Conception%>%
+  group_by(yes_no)%>%
+  count(an4)%>%
+  pivot_wider(names_from = yes_no,values_from = n)%>%
+  mutate(an4=str_replace_na(an4,"Not Selected"),Fertile=str_replace_na(Fertile,"0"),
+         Infertile=str_replace_na(Infertile,"0"),p_value=c("0.25",""))%>%
+  column_to_rownames(var="an4")
+trat4$Fertile<-as.integer(trat4$Fertile)
+trat4$Infertile<-as.integer(trat4$Infertile)
+
+Feeling_Failing<-bind_rows(ans_1=trat1,ans_2=trat2,ans_3=trat3,
+                            ans_4=trat4,.id = "Variables") 
+
+circles3<-Feeling_Failing%>%rownames_to_column("Treatment_Option")%>%
+  select(-Variables,-p_value )%>%mutate(Treatment_Option=str_replace_all(Treatment_Option,"[...]\\d*",""),Treatment_Option=recode(Treatment_Option,"Obesity in both men and wome"="Obesity in both men and women"))%>%group_by(Treatment_Option)%>%
+  summarise(Fertile=sum(Fertile),Infertile=sum(Infertile))
+
+fig6a <- plot_ly(circles3, labels = ~Treatment_Option, values = ~Infertile, type = 'pie')
+fig6 <- fig6a %>% layout(title = 'Treatment Options Known to Infertile Respondent',
+    xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+     yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+fig6
+
+fig7a <- plot_ly(circles2, labels = ~Treatment_Option, values = ~Fertile, type = 'pie')
+fig7 <- fig7a %>% layout(title = 'Treatment Options Known to Fertile Respondent',
+        xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+       yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+fig7
 
 ```
 
